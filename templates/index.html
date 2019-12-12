@@ -1,0 +1,184 @@
+<html>
+  <head>
+    <title>Video Streaming Demonstration</title>
+    <script src={{url_for('static', filename='echarts.min.js')}}></script>
+    <script src={{url_for('static', filename='jquery.min.js')}}></script>
+    <!--<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>-->
+    <script type="text/javascript">
+    $(function(){
+      var xAxisData =  ['neutral', 'angry', 'surprise', 'disgust', 'fear', 'happy', 'sad']
+      var mychart;
+      var timer;
+      start_poll()
+      function start_poll(){
+       
+        timer = window.setInterval(function(){
+          $.ajax({
+            url:'/historgram',
+            method:'get',
+            success:function(data){
+              //console.log(data)
+              data = JSON.parse(data)
+              redraw(data)
+            }
+          })
+        },200)
+      }
+      function redraw(raw_data){
+        console.log(raw_data)
+        
+        var items = []
+        var colors = []
+        for(var key in raw_data){
+          colors.push(key)
+          //console.log(key)
+          var data = []
+          var maxs = []
+          var item = raw_data[key]
+          //console.log(item)
+          for(var i=0;i<xAxisData.length;i++){
+           //console.log(xAxisData[i])
+           
+           if(item[xAxisData[i]]==undefined){
+             data.push(0)
+           }else{
+             data.push(item[xAxisData[i]])
+           }
+           maxs.push(1)
+          }
+          items.push({
+                // 辅助系列
+                type: 'bar',
+                silent: true,
+                xAxisIndex: 1,
+                itemStyle: {
+                    normal: {
+                        barBorderRadius: 8,
+                        color: '#ddd'      
+                    }
+                },
+                barWidth: 20,
+                data:maxs
+            }, {
+                type: 'bar',
+                data: data,
+                barWidth: 20,
+                itemStyle: {
+                    normal: {
+                        barBorderRadius: 8,
+                        color: key,
+                        shadowColor: 'rgba(0, 0, 0, 0.4)',
+                        shadowBlur: 20
+                    }
+                }
+            })
+       }
+        //console.log(data)
+        var option = {
+            title: {
+               show:false
+            },
+            tooltip:{
+              show:true  
+            },
+            grid:{
+              left:150
+            },
+            color:colors,
+            xAxis: [{
+                data: xAxisData,
+                axisLabel: {
+                    textStyle: {
+                        color: '#03a9f4',
+                        fontSize:30
+                    }
+                    
+                },
+                splitLine: {
+                    show: false
+                },
+                axisTick:{
+                    show:false
+                },
+                axisLine:{
+                    show:false
+                }
+            }, {
+                // 辅助 x 轴
+                show: false,
+                data: xAxisData  
+            }],
+            yAxis: {
+                max: 1,
+                axisLine: {
+                    show: false
+                },
+                splitLine:{
+                    show:false
+                },
+                axisTick:{
+                    show:false
+                },
+                axisLabel:{
+                    show:false
+                }
+            },
+            series:items
+            // series: [{
+            //     // 辅助系列
+            //     type: 'bar',
+            //     silent: true,
+            //     yAxisIndex: 1,
+            //     itemStyle: {
+            //         normal: {
+            //             barBorderRadius: 8,
+            //             color: '#ddd'      
+            //         }
+            //     },
+            //     barWidth: 18,
+            //     data: data.map(function (val) {
+            //         return 1;
+            //     })
+            // }, {
+            //     type: 'bar',
+            //     data: data,
+            //     barWidth: 16,
+            //     itemStyle: {
+            //         normal: {
+            //             barBorderRadius: 8,
+            //             color: '#03a9f4',
+            //             shadowColor: 'rgba(0, 0, 0, 0.4)',
+            //             shadowBlur: 20
+            //         }
+            //     }
+            // }]
+            }
+        mychart = echarts.init(document.getElementById('chart'))
+        mychart.setOption(option)
+      }
+    })
+    </script>
+    <style>
+    .container{
+      position:relative;
+    }
+    #chart{
+      height:400px;
+      width:1600px;
+    }
+    </style>
+  </head>
+  <body>
+  	<div class="container">
+	  	<center>
+	    	<h1>Facial Expression Recognition</h1>
+	    	<img src="{{ url_for('video_feed') }}">
+	    </center>
+    </div>
+    <div>
+	  	<center>
+	    	<div id="chart"></div>
+	    </center>
+    </div>
+  </body>
+</html>

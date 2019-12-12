@@ -1,0 +1,45 @@
+Coauther WLC, who is also from SCUT, had done most of the system framework, including PCCapture.py, Recorder, Video2Img.py, Webserver，and Consumer.py.
+I wrote the image preprocessing and FER part, including FERMODEL.py(The AlexNet part is from WLC. On 2019.12.12, the rcfn part is nearly finished.), FaceProcessUtilMultiFaces.py, FaceProcessUtilMultiFacesV2.py, and the rcfn part in Video2Img.py.
+To be compatible with newly version of kafka in python, extra parameters have been added.
+
+The followings are the instructions for the FEROnlineSystem, but you still need the two dlib models, which can be downloaded from Dlib offical website, and the pre-trained FER model to run this system.
+
+python 3.7:
+pip install kafka kafka-python pykafka redis
+
+系统需要启动kafka和redis服务(如Kafka和Zookeeper有旧的缓存或数据，可以删除后再启动服务)
+
+启动Redis服务：
+先进入Redis目录，然后输入（conf配置文件若需更改密码，请自行更改）
+项目源码中Recoder.py中连接Redis的密码为xxxxxxxxxxxxxx，hostname为xxx.xxx.xxx.xxx，
+因此更改Recorder.py中的设置或需更改conf配置文件（使用哪个配置文件就更改那个配置文件，建议redis.windows.conf）。先绑定hostname（在56行左右），再设置密码（在445行左右）
+bind xxx.xxx.xxx.xxx
+requirepass xxxxxxxxxxxxxx
+
+redis-server.exe redis.windows-service.conf 或 redis-server.exe redis.windows.conf
+
+启动Kafka服务：
+进入Kafka 目录，config文件夹下面的server.properties需要添加listeners和advertised.listener（相应位置有相关说明，在大概30行的Socket Server Settings中）
+listeners=PLAINTEXT://xxx.xxx.xxx.xxx:9092
+advertised.listeners=PLAINTEXT://xxx.xxx.xxx.xxx:9092
+
+然后输入
+bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+bin\windows\kafka-server-start.bat config\server.properties
+
+然后创建Topic
+bin\windows\kafka-topics.bat --create --topic video --replication-factor 1 --partitions 1 --zookeeper xxx.xxx.xxx.xxx:2181
+bin\windows\kafka-topics.bat --create --topic image --replication-factor 1 --partitions 1 --zookeeper xxx.xxx.xxx.xxx:2181
+bin\windows\kafka-topics.bat --create --topic emotion_probability --replication-factor 1 --partitions 1 --zookeeper xxx.xxx.xxx.xxx:2181
+
+查看Topic
+bin\windows\kafka-topics.bat --list --zookeeper xxx.xxx.xxx.xxx:2181
+
+
+
+然后在有摄像头的设备上运行PCCapture.py，
+接着再负责进行设别分类的设备（需要TensorFlow，dlib，Opencv-python）上运行Video2Img.py
+最后在选择在线预览的设备上运行WebServer.py
+
+所有的hostname（即上述的xxx.xxx.xxx.xxx）请按需设置，负责相关服务数据的中转和保存。
+所有设备最好安装Anaconda，或配好相应的运行环境。
